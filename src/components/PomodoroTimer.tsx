@@ -34,11 +34,13 @@ const PomodoroTimer = () => {
     }
   }, [timer.isComplete, playSound]);
 
+  // Update timer when mode changes
   useEffect(() => {
     if (!timer.isRunning) {
       timer.setTime(mode === "focus" ? focusMinutes : breakMinutes);
     }
-  }, [mode, focusMinutes, breakMinutes, timer]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   const handleModeChange = (newMode: "focus" | "break") => {
     setMode(newMode);
@@ -114,4 +116,3 @@ const PomodoroTimer = () => {
 };
 
 export default PomodoroTimer;
-
