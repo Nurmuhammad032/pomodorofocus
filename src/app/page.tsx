@@ -1,26 +1,58 @@
 import { Metadata } from "next";
-import PomodoroTimer from "@/components/PomodoroTimer";
+import HeroSection from "@/components/sections/HeroSection";
+import AboutSection from "@/components/sections/AboutSection";
+import TechniqueSection from "@/components/sections/TechniqueSection";
+import BestPracticesSection from "@/components/sections/BestPracticesSection";
+import BenefitsSection from "@/components/sections/BenefitsSection";
+import Footer from "@/components/sections/Footer";
 
 export const metadata: Metadata = {
-  title: "Pomodoro Focus - Stay Focused, Stay Productive",
+  title: "PomodoroFocus Timer - Boost Productivity with the Pomodoro Technique",
   description:
-    "A simple and elegant Pomodoro timer to help you stay focused and productive. Use the Pomodoro Technique to manage your time effectively with customizable focus and break sessions.",
+    "Online Pomodoro timer to help you stay focused and productive. Master the Pomodoro Technique with customizable 25-minute focus sessions and breaks. Improve time management, prevent burnout, and achieve deep work.",
   keywords: [
-    "pomodoro",
-    "timer",
-    "productivity",
-    "focus",
-    "time management",
+    "pomodoro timer",
     "pomodoro technique",
+    "productivity timer",
+    "focus timer",
+    "time management",
+    "work timer",
+    "study timer",
+    "productivity tool",
+    "deep work",
+    "time blocking",
+    "focus technique",
+    "break timer",
+    "work break timer",
+    "online timer",
   ],
   openGraph: {
-    title: "Pomodoro Focus - Stay Focused, Stay Productive",
+    title: "PomodoroFocus Timer - Boost Your Productivity",
     description:
-      "A simple and elegant Pomodoro timer to help you stay focused and productive.",
+      "Online Pomodoro timer with the proven technique to improve focus, prevent burnout, and boost productivity. Start your 25-minute focus session now.",
     type: "website",
+    siteName: "PomodoroFocus",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PomodoroFocus Timer - Boost Your Productivity",
+    description:
+      "Pomodoro timer to help you focus better and work smarter. Start your productive session now!",
+  },
+  alternates: {
+    canonical: "https://pomodorofocus.co",
   },
 };
 
 export default function Home() {
-  return <PomodoroTimer />;
+  return (
+    <div className="overflow-x-hidden">
+      <HeroSection />
+      <AboutSection />
+      <TechniqueSection />
+      <BestPracticesSection />
+      <BenefitsSection />
+      <Footer />
+    </div>
+  );
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Space_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import StructuredData from "@/components/StructuredData";
 
 // Google Font: DM Sans
 const dmSans = DM_Sans({
@@ -41,6 +42,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${dmSans.variable} ${spaceMono.variable} antialiased`}>
+        <StructuredData />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
         </ThemeProvider>

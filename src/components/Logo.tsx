@@ -5,7 +5,7 @@ const Logo = () => {
         <div className="w-2 h-2 rounded-full bg-primary" />
       </div>
       <span className="text-lg font-semibold tracking-tight text-foreground">
-        Pomodorofocus
+        PomodoroFocus
       </span>
     </div>
   );
