@@ -59,6 +59,25 @@ const PomodoroTimer = () => {
     };
   }, [timer.isRunning]);
 
+  // Update document title with timer
+  useEffect(() => {
+    const formattedMinutes = String(timer.minutes).padStart(2, "0");
+    const formattedSeconds = String(timer.seconds).padStart(2, "0");
+    const modeEmoji = mode === "focus" ? "🎯" : "☕";
+    
+    if (timer.isRunning) {
+      document.title = `${modeEmoji} ${formattedMinutes}:${formattedSeconds} - PomodoroFocus`;
+    } else if (timer.isComplete) {
+      document.title = "✅ Time's up! - PomodoroFocus";
+    } else {
+      document.title = "PomodoroFocus Timer - Boost Productivity";
+    }
+
+    return () => {
+      document.title = "PomodoroFocus Timer - Boost Productivity";
+    };
+  }, [timer.isRunning, timer.minutes, timer.seconds, timer.isComplete, mode]);
+
   const handleModeChange = (newMode: "focus" | "break") => {
     setMode(newMode);
     timer.reset(newMode === "focus" ? focusMinutes : breakMinutes);
