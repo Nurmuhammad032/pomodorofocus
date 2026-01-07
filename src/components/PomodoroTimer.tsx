@@ -42,6 +42,23 @@ const PomodoroTimer = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
+  // Warn before leaving if timer is running
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (timer.isRunning) {
+        e.preventDefault();
+        e.returnValue = ""; // Chrome requires returnValue to be set
+        return "Timer is running. Are you sure you want to leave?";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [timer.isRunning]);
+
   const handleModeChange = (newMode: "focus" | "break") => {
     setMode(newMode);
     timer.reset(newMode === "focus" ? focusMinutes : breakMinutes);
