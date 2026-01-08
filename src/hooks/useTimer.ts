@@ -1,60 +1,129 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface UseTimerProps {
   initialMinutes: number;
 }
 
 export const useTimer = ({ initialMinutes }: UseTimerProps) => {
-  const [totalSeconds, setTotalSeconds] = useState(initialMinutes * 60);
+  const [remainingSeconds, setRemainingSeconds] = useState(initialMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [initialDuration, setInitialDuration] = useState(initialMinutes * 60);
 
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const minutes = Math.floor(remainingSeconds / 60);
+  const seconds = remainingSeconds % 60;
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    if (!isRunning || startTime === null) return;
 
-    if (isRunning && totalSeconds > 0) {
-      interval = setInterval(() => {
-        setTotalSeconds((prev) => prev - 1);
-      }, 1000);
-    } else if (totalSeconds === 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsRunning(false);
-    }
+    const updateTimer = () => {
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - startTime) / 1000);
+      const newRemaining = Math.max(0, initialDuration - elapsedSeconds);
+
+      setRemainingSeconds(newRemaining);
+
+      if (newRemaining > 0) {
+        // Background tabda ham ishlashi uchun juda qisqa timeout
+        // Keyingi update uchun vaqtni hisoblab
+        const nextUpdate = 1000 - (now % 1000);
+        timerRef.current = setTimeout(updateTimer, nextUpdate);
+      } else {
+        setIsRunning(false);
+      }
+    };
+
+    // Birinchi update
+    const now = Date.now();
+    const nextUpdate = 1000 - (now % 1000);
+    timerRef.current = setTimeout(updateTimer, nextUpdate);
 
     return () => {
-      if (interval) clearInterval(interval);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
     };
-  }, [isRunning, totalSeconds]);
+  }, [isRunning, startTime, initialDuration]);
 
   const start = useCallback(() => {
-    if (totalSeconds > 0) {
+    if (remainingSeconds > 0) {
+      const now = Date.now();
+      // Qancha vaqt o'tganini hisoblaymiz
+      const elapsed = initialDuration - remainingSeconds;
+      setStartTime(now - elapsed * 1000);
       setIsRunning(true);
     }
-  }, [totalSeconds]);
+  }, [remainingSeconds, initialDuration]);
 
   const pause = useCallback(() => {
     setIsRunning(false);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    // Pause bo'lganda start timeni null qilamiz
+    setStartTime(null);
   }, []);
 
   const reset = useCallback(
     (newMinutes?: number) => {
       setIsRunning(false);
-      setTotalSeconds((newMinutes ?? initialMinutes) * 60);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+
+      const newTotalSeconds = (newMinutes ?? initialMinutes) * 60;
+      setRemainingSeconds(newTotalSeconds);
+      setInitialDuration(newTotalSeconds);
+      setStartTime(null);
     },
     [initialMinutes]
   );
 
   const setTime = useCallback((newMinutes: number) => {
-    setTotalSeconds(newMinutes * 60);
+    setIsRunning(false);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    const newTotalSeconds = newMinutes * 60;
+    setRemainingSeconds(newTotalSeconds);
+    setInitialDuration(newTotalSeconds);
+    setStartTime(null);
   }, []);
+
+  // Background tabga o'tganda ham to'g'ri ishlashi uchun visibility change event
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && isRunning && startTime) {
+        // Tab backgroundga o'tsa, tekshirib turamiz
+        const now = Date.now();
+        const elapsedSeconds = Math.floor((now - startTime) / 1000);
+        const newRemaining = Math.max(0, initialDuration - elapsedSeconds);
+        setRemainingSeconds(newRemaining);
+
+        if (newRemaining <= 0) {
+          setIsRunning(false);
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isRunning, startTime, initialDuration]);
 
   return {
     minutes,
     seconds,
     isRunning,
-    isComplete: totalSeconds === 0,
+    isComplete: remainingSeconds === 0,
     start,
     pause,
     reset,
