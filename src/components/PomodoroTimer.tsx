@@ -11,14 +11,48 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { useTimer } from "@/hooks/useTimer";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 
+// Types
+interface PomodoroSettings {
+  focusMinutes: number;
+  breakMinutes: number;
+  longBreakMinutes: number;
+  sessionsBeforeLongBreak: number;
+}
+
+// Constants
+const DEFAULT_SETTINGS: PomodoroSettings = {
+  focusMinutes: 25,
+  breakMinutes: 5,
+  longBreakMinutes: 15,
+  sessionsBeforeLongBreak: 3,
+};
+
+const STORAGE_KEY = "pomodoroSettings";
+const POMODOROS_KEY = "pomodoroCount";
+
+// Helper to get today's date string
+const getTodayString = () => new Date().toDateString();
+
 const PomodoroTimer = () => {
+  // State
   const [mode, setMode] = useState<"focus" | "break" | "longBreak">("focus");
-  const [focusMinutes, setFocusMinutes] = useState(25);
-  const [breakMinutes, setBreakMinutes] = useState(5);
-  const [longBreakMinutes, setLongBreakMinutes] = useState(15);
+  const [focusMinutes, setFocusMinutes] = useState(
+    DEFAULT_SETTINGS.focusMinutes
+  );
+  const [breakMinutes, setBreakMinutes] = useState(
+    DEFAULT_SETTINGS.breakMinutes
+  );
+  const [longBreakMinutes, setLongBreakMinutes] = useState(
+    DEFAULT_SETTINGS.longBreakMinutes
+  );
+  const [sessionsBeforeLongBreak, setSessionsBeforeLongBreak] = useState(
+    DEFAULT_SETTINGS.sessionsBeforeLongBreak
+  );
   const [completedPomodoros, setCompletedPomodoros] = useState(0);
-  const [sessionsBeforeLongBreak, setSessionsBeforeLongBreak] = useState(3);
   const [currentSessionCount, setCurrentSessionCount] = useState(0);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Refs
   const hasPlayedSound = useRef(false);
   const wasRunning = useRef(false);
 
@@ -33,6 +67,108 @@ const PomodoroTimer = () => {
   });
 
   const { playSound } = useNotificationSound();
+
+  // Load settings and pomodoro count from localStorage after hydration (client-only)
+  useEffect(() => {
+    try {
+      // Load settings
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const settings = JSON.parse(saved) as PomodoroSettings;
+        setFocusMinutes(settings.focusMinutes ?? DEFAULT_SETTINGS.focusMinutes);
+        setBreakMinutes(settings.breakMinutes ?? DEFAULT_SETTINGS.breakMinutes);
+        setLongBreakMinutes(
+          settings.longBreakMinutes ?? DEFAULT_SETTINGS.longBreakMinutes
+        );
+        setSessionsBeforeLongBreak(
+          settings.sessionsBeforeLongBreak ??
+            DEFAULT_SETTINGS.sessionsBeforeLongBreak
+        );
+      }
+
+      // Load today's pomodoro count
+      const savedPomodoros = localStorage.getItem(POMODOROS_KEY);
+      if (savedPomodoros) {
+        const data = JSON.parse(savedPomodoros) as {
+          count: number;
+          date: string;
+        };
+        const today = getTodayString();
+
+        // Only restore count if it's from today
+        if (data.date === today) {
+          setCompletedPomodoros(data.count);
+        } else {
+          // Different day - reset to 0
+          setCompletedPomodoros(0);
+          localStorage.setItem(
+            POMODOROS_KEY,
+            JSON.stringify({ count: 0, date: today })
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load data from localStorage:", error);
+    } finally {
+      setIsHydrated(true);
+    }
+  }, []);
+
+  // Update timer when settings are loaded (after state updates)
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    // Only update if timer is not running
+    if (!timer.isRunning) {
+      const currentMinutes =
+        mode === "focus"
+          ? focusMinutes
+          : mode === "break"
+          ? breakMinutes
+          : longBreakMinutes;
+      timer.setTime(currentMinutes);
+    }
+  }, [isHydrated, focusMinutes, breakMinutes, longBreakMinutes, mode, timer]);
+
+  // Save settings to localStorage whenever they change (after hydration)
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const settings: PomodoroSettings = {
+      focusMinutes,
+      breakMinutes,
+      longBreakMinutes,
+      sessionsBeforeLongBreak,
+    };
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    } catch (error) {
+      console.error("Failed to save settings to localStorage:", error);
+    }
+  }, [
+    focusMinutes,
+    breakMinutes,
+    longBreakMinutes,
+    sessionsBeforeLongBreak,
+    isHydrated,
+  ]);
+
+  // Save completed pomodoros count to localStorage (after hydration)
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const data = {
+      count: completedPomodoros,
+      date: getTodayString(),
+    };
+
+    try {
+      localStorage.setItem(POMODOROS_KEY, JSON.stringify(data));
+    } catch (error) {
+      console.error("Failed to save pomodoro count to localStorage:", error);
+    }
+  }, [completedPomodoros, isHydrated]);
 
   // Play sound when timer completes, count pomodoros, and auto-switch modes
   useEffect(() => {
@@ -178,10 +314,10 @@ const PomodoroTimer = () => {
           <div className="flex flex-col items-end">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-muted-foreground">
-                Completed:
+                Today:
               </span>
               <span className="text-lg font-bold text-primary tabular-nums">
-                #{completedPomodoros}
+                {completedPomodoros} 🍅
               </span>
             </div>
             <span className="text-xs text-muted-foreground">
@@ -226,12 +362,15 @@ const PomodoroTimer = () => {
         </div>
 
         {/* Controls */}
-        <TimerControls
-          isRunning={timer.isRunning}
-          onStart={timer.start}
-          onPause={timer.pause}
-          onReset={handleReset}
-        />
+        <div className="flex flex-col items-center gap-4">
+          <TimerControls
+            isRunning={timer.isRunning}
+            onStart={timer.start}
+            onPause={timer.pause}
+            onReset={handleReset}
+          />
+          <TestSoundButton onTest={playSound} />
+        </div>
 
         {/* Settings */}
         <div className="flex flex-col items-center gap-3">
@@ -249,11 +388,6 @@ const PomodoroTimer = () => {
             disabled={timer.isRunning}
           />
         </div>
-      </div>
-
-      {/* Bottom */}
-      <div className="absolute bottom-6 flex items-center gap-4">
-        <TestSoundButton onTest={playSound} />
       </div>
     </main>
   );

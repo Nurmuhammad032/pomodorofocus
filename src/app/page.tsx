@@ -32,12 +32,21 @@ export const metadata: Metadata = {
       "Online Pomodoro timer with the proven technique to improve focus, prevent burnout, and boost productivity. Start your 25-minute focus session now.",
     type: "website",
     siteName: "PomodoroFocus",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "PomodoroFocus Timer",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "PomodoroFocus Timer - Boost Your Productivity",
     description:
       "Pomodoro timer to help you focus better and work smarter. Start your productive session now!",
+    images: ["/og-image.png"],
   },
   alternates: {
     canonical: "https://pomodorofocus.co",

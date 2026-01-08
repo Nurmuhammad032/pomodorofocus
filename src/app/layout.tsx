@@ -36,12 +36,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <meta
-          name="google-site-verification"
-          content="yP8UbRNoRrfi7uzJpQL0i1HuYGuY7DoHOGa5OISKvjg"
-        />
-      </head>
       <body className={`${dmSans.variable} ${spaceMono.variable} antialiased`}>
         <StructuredData />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
