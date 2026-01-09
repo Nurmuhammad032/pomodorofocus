@@ -55,6 +55,11 @@ const PomodoroTimer = () => {
   // Refs
   const hasPlayedSound = useRef(false);
   const wasRunning = useRef(false);
+  const lastSetMinutes = useRef<{ focus: number; break: number; longBreak: number }>({
+    focus: DEFAULT_SETTINGS.focusMinutes,
+    break: DEFAULT_SETTINGS.breakMinutes,
+    longBreak: DEFAULT_SETTINGS.longBreakMinutes,
+  });
 
   const getCurrentMinutes = () => {
     if (mode === "focus") return focusMinutes;
@@ -114,21 +119,31 @@ const PomodoroTimer = () => {
     }
   }, []);
 
-  // Update timer when settings are loaded (after state updates)
+  // Update timer display when settings are loaded from localStorage after hydration
   useEffect(() => {
     if (!isHydrated) return;
 
-    // Only update if timer is not running
-    if (!timer.isRunning) {
-      const currentMinutes =
-        mode === "focus"
-          ? focusMinutes
-          : mode === "break"
-          ? breakMinutes
-          : longBreakMinutes;
-      timer.setTime(currentMinutes);
+    const currentMinutes =
+      mode === "focus"
+        ? focusMinutes
+        : mode === "break"
+        ? breakMinutes
+        : longBreakMinutes;
+    
+    // Track what minutes we last set for this mode
+    const modeKey = mode === "focus" ? "focus" : mode === "break" ? "break" : "longBreak";
+    const previousMinutes = lastSetMinutes.current[modeKey];
+    
+    // Only update timer if settings actually changed for current mode
+    if (currentMinutes !== previousMinutes) {
+      // Only reset if timer is not currently running or paused mid-session
+      if (!timer.isRunning) {
+        timer.setTime(currentMinutes);
+      }
+      lastSetMinutes.current[modeKey] = currentMinutes;
     }
-  }, [isHydrated, focusMinutes, breakMinutes, longBreakMinutes, mode, timer]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHydrated, focusMinutes, breakMinutes, longBreakMinutes, mode]);
 
   // Save settings to localStorage whenever they change (after hydration)
   useEffect(() => {
@@ -271,6 +286,10 @@ const PomodoroTimer = () => {
         ? breakMinutes
         : longBreakMinutes;
     timer.reset(minutes);
+    
+    // Update the ref so we know this mode's timer was set
+    const modeKey = newMode === "focus" ? "focus" : newMode === "break" ? "break" : "longBreak";
+    lastSetMinutes.current[modeKey] = minutes;
   };
 
   const handleReset = () => {
@@ -281,6 +300,7 @@ const PomodoroTimer = () => {
     setFocusMinutes(minutes);
     if (mode === "focus" && !timer.isRunning) {
       timer.setTime(minutes);
+      lastSetMinutes.current.focus = minutes;
     }
   };
 
@@ -288,6 +308,7 @@ const PomodoroTimer = () => {
     setBreakMinutes(minutes);
     if (mode === "break" && !timer.isRunning) {
       timer.setTime(minutes);
+      lastSetMinutes.current.break = minutes;
     }
   };
 
@@ -295,6 +316,7 @@ const PomodoroTimer = () => {
     setLongBreakMinutes(minutes);
     if (mode === "longBreak" && !timer.isRunning) {
       timer.setTime(minutes);
+      lastSetMinutes.current.longBreak = minutes;
     }
   };
 
