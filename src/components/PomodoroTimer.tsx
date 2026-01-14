@@ -5,11 +5,21 @@ import Logo from "@/components/Logo";
 import TimerDisplay from "@/components/TimerDisplay";
 import TimerControls from "@/components/TimerControls";
 import ModeSelector from "@/components/ModeSelector";
-import TimeSettings from "@/components/TimeSettings";
+import SettingsDialogContent from "@/components/SettingsDialog";
 import TestSoundButton from "@/components/TestSoundButton";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useTimer } from "@/hooks/useTimer";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
+import { Settings } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 // Types
 interface PomodoroSettings {
@@ -51,11 +61,16 @@ const PomodoroTimer = () => {
   const [completedPomodoros, setCompletedPomodoros] = useState(0);
   const [currentSessionCount, setCurrentSessionCount] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Refs
   const hasPlayedSound = useRef(false);
   const wasRunning = useRef(false);
-  const lastSetMinutes = useRef<{ focus: number; break: number; longBreak: number }>({
+  const lastSetMinutes = useRef<{
+    focus: number;
+    break: number;
+    longBreak: number;
+  }>({
     focus: DEFAULT_SETTINGS.focusMinutes,
     break: DEFAULT_SETTINGS.breakMinutes,
     longBreak: DEFAULT_SETTINGS.longBreakMinutes,
@@ -129,11 +144,12 @@ const PomodoroTimer = () => {
         : mode === "break"
         ? breakMinutes
         : longBreakMinutes;
-    
+
     // Track what minutes we last set for this mode
-    const modeKey = mode === "focus" ? "focus" : mode === "break" ? "break" : "longBreak";
+    const modeKey =
+      mode === "focus" ? "focus" : mode === "break" ? "break" : "longBreak";
     const previousMinutes = lastSetMinutes.current[modeKey];
-    
+
     // Only update timer if settings actually changed for current mode
     if (currentMinutes !== previousMinutes) {
       // Only reset if timer is not currently running or paused mid-session
@@ -286,9 +302,14 @@ const PomodoroTimer = () => {
         ? breakMinutes
         : longBreakMinutes;
     timer.reset(minutes);
-    
+
     // Update the ref so we know this mode's timer was set
-    const modeKey = newMode === "focus" ? "focus" : newMode === "break" ? "break" : "longBreak";
+    const modeKey =
+      newMode === "focus"
+        ? "focus"
+        : newMode === "break"
+        ? "break"
+        : "longBreak";
     lastSetMinutes.current[modeKey] = minutes;
   };
 
@@ -394,22 +415,41 @@ const PomodoroTimer = () => {
           <TestSoundButton onTest={playSound} />
         </div>
 
-        {/* Settings */}
-        <div className="flex flex-col items-center gap-3">
-          <TimeSettings
-            focusMinutes={focusMinutes}
-            breakMinutes={breakMinutes}
-            longBreakMinutes={longBreakMinutes}
-            sessionsBeforeLongBreak={sessionsBeforeLongBreak}
-            onFocusChange={handleFocusChange}
-            onBreakChange={handleBreakChange}
-            onLongBreakChange={handleLongBreakChange}
-            onSessionsBeforeLongBreakChange={
-              handleSessionsBeforeLongBreakChange
-            }
-            disabled={timer.isRunning}
-          />
-        </div>
+        {/* Settings Button */}
+        <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full w-12 h-12 hover:bg-primary/10 hover:text-primary transition-all duration-150 active:scale-95"
+            >
+              <Settings className="h-5 w-5" />
+              <span className="sr-only">Settings</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Timer Settings</DialogTitle>
+              <DialogDescription>
+                Choose a preset or customize your Pomodoro durations.
+              </DialogDescription>
+            </DialogHeader>
+            <SettingsDialogContent
+              focusMinutes={focusMinutes}
+              breakMinutes={breakMinutes}
+              longBreakMinutes={longBreakMinutes}
+              sessionsBeforeLongBreak={sessionsBeforeLongBreak}
+              onFocusChange={handleFocusChange}
+              onBreakChange={handleBreakChange}
+              onLongBreakChange={handleLongBreakChange}
+              onSessionsBeforeLongBreakChange={
+                handleSessionsBeforeLongBreakChange
+              }
+              disabled={timer.isRunning}
+              onClose={() => setIsSettingsOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </main>
   );

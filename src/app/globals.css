@@ -108,4 +108,33 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
+
+  /* Article typography improvements */
+  article {
+    @apply text-foreground;
+    
+    p {
+      @apply leading-relaxed;
+    }
+    
+    strong {
+      @apply font-semibold;
+    }
+    
+    em {
+      @apply italic;
+    }
+    
+    ol {
+      @apply list-decimal list-inside;
+    }
+    
+    ul {
+      @apply list-disc list-inside;
+    }
+    
+    li {
+      @apply mb-2;
+    }
+  }
 }

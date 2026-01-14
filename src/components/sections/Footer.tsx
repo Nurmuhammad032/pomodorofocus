@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Heart } from "lucide-react";
 
 export default function Footer() {
@@ -29,13 +30,36 @@ export default function Footer() {
                 </button>
               </li>
               <li>
+                <Link
+                  href="/focus"
+                  className="hover:text-primary transition-colors"
+                >
+                  <button
+                    onClick={() =>
+                      window.scrollTo({ top: 0, behavior: "smooth" })
+                    }
+                    className="hover:text-primary transition-colors"
+                  >
+                    Focus
+                  </button>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/what-is-pomodoro"
+                  className="hover:text-primary transition-colors"
+                >
+                  What is Pomodoro?
+                </Link>
+              </li>
+              <li>
                 <a
                   href="https://en.wikipedia.org/wiki/Pomodoro_Technique"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-primary transition-colors"
                 >
-                  About Pomodoro Technique
+                  Wikipedia Article
                 </a>
               </li>
             </ul>
