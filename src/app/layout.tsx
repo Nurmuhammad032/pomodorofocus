@@ -5,6 +5,7 @@ import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import StructuredData from "@/components/StructuredData";
+import { PostHogProvider } from "@/components/Providers";
 
 // Google Font: DM Sans
 const dmSans = DM_Sans({
@@ -47,11 +48,13 @@ export default function RootLayout({
         />
       </head>
       <body className={`${dmSans.variable} ${spaceMono.variable} antialiased`}>
-        <StructuredData />
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
-          <Analytics />
-        </ThemeProvider>
+        <PostHogProvider>
+          <StructuredData />
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            {children}
+            <Analytics />
+          </ThemeProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

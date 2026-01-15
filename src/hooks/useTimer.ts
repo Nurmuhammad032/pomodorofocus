@@ -1,3 +1,4 @@
+import { usePostHog } from "posthog-js/react";
 import { useState, useEffect, useCallback, useRef } from "react";
 
 interface UseTimerProps {
@@ -6,6 +7,7 @@ interface UseTimerProps {
 
 export const useTimer = ({ initialMinutes }: UseTimerProps) => {
   const [remainingSeconds, setRemainingSeconds] = useState(initialMinutes * 60);
+  const posthog = usePostHog();
   const [isRunning, setIsRunning] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [initialDuration, setInitialDuration] = useState(initialMinutes * 60);
@@ -50,15 +52,17 @@ export const useTimer = ({ initialMinutes }: UseTimerProps) => {
   const start = useCallback(() => {
     if (remainingSeconds > 0) {
       const now = Date.now();
+      posthog.capture("timer_started");
       // Qancha vaqt o'tganini hisoblaymiz
       const elapsed = initialDuration - remainingSeconds;
       setStartTime(now - elapsed * 1000);
       setIsRunning(true);
     }
-  }, [remainingSeconds, initialDuration]);
+  }, [remainingSeconds, initialDuration, posthog]);
 
   const pause = useCallback(() => {
     setIsRunning(false);
+    posthog.capture("timer_paused", { remaining_seconds: remainingSeconds });
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
@@ -66,11 +70,12 @@ export const useTimer = ({ initialMinutes }: UseTimerProps) => {
 
     // Pause bo'lganda start timeni null qilamiz
     setStartTime(null);
-  }, []);
+  }, [posthog, remainingSeconds]);
 
   const reset = useCallback(
     (newMinutes?: number) => {
       setIsRunning(false);
+      posthog.capture("timer_reset");
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
@@ -81,21 +86,25 @@ export const useTimer = ({ initialMinutes }: UseTimerProps) => {
       setInitialDuration(newTotalSeconds);
       setStartTime(null);
     },
-    [initialMinutes]
+    [initialMinutes, posthog]
   );
 
-  const setTime = useCallback((newMinutes: number) => {
-    setIsRunning(false);
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
+  const setTime = useCallback(
+    (newMinutes: number) => {
+      setIsRunning(false);
+      posthog.capture("timer_set", { new_minutes: newMinutes });
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
 
-    const newTotalSeconds = newMinutes * 60;
-    setRemainingSeconds(newTotalSeconds);
-    setInitialDuration(newTotalSeconds);
-    setStartTime(null);
-  }, []);
+      const newTotalSeconds = newMinutes * 60;
+      setRemainingSeconds(newTotalSeconds);
+      setInitialDuration(newTotalSeconds);
+      setStartTime(null);
+    },
+    [posthog]
+  );
 
   // Background tabga o'tganda ham to'g'ri ishlashi uchun visibility change event
   useEffect(() => {
